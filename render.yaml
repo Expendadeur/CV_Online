@@ -1,6 +1,4 @@
-services:
-  - type: web
-    name: cv-studio
-    runtime: static
+staticSites:
+  - name: cv-studio
     buildCommand: null
     publishDir: .
