@@ -1,6 +1,6 @@
 services:
-  - type: static
+  - type: web
     name: cv-studio
-    env: static
+    runtime: static
     buildCommand: null
     publishDir: .
