@@ -10,7 +10,20 @@
         rel="stylesheet">
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Scripts -->
+    <!-- Analytics (Google Analytics GA4) - Private Dashboard -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-XXXXXXXXXX');
+        
+        // Custom events helper
+        function trackEvent(name, params = {}) {
+            gtag('event', name, params);
+        }
+    </script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
@@ -1645,8 +1658,37 @@
             }
         }
 
+        function showPremiumModal() {
+            document.getElementById('premium-modal-overlay').classList.add('active');
+            trackEvent('show_premium_modal');
+        }
+
+        function hidePremiumModal() {
+            document.getElementById('premium-modal-overlay').classList.remove('active');
+        }
+
+        function verifyPayment() {
+            const txId = document.getElementById('transaction-id').value.trim();
+            if (txId.length >= 6) {
+                state.isPremium = true;
+                saveToLocalStorage();
+                hidePremiumModal();
+                alert('Paiement vérifié ! Vous pouvez maintenant télécharger votre CV sans limites.');
+                trackEvent('payment_success', { transaction_id: txId });
+                downloadPDF(); // Auto start download
+            } else {
+                alert('Veuillez entrer un numéro de transaction valide.');
+            }
+        }
+
         // Exports
         async function downloadPDF() {
+            if (!state.isPremium) {
+                showPremiumModal();
+                return;
+            }
+
+            trackEvent('download_pdf_start');
             const { jsPDF } = window.jspdf;
             const element = document.getElementById('cv-content');
 
@@ -1716,11 +1758,44 @@
             } else {
                 form.classList.add('hidden');
                 preview.classList.add('active');
-                tabForm.classList.remove('active');
-                tabPreview.classList.add('active');
-            }
+                          }
         }
     </script>
+
+    <div class="modal-overlay" id="premium-modal-overlay">
+        <div class="glass premium-modal">
+            <button class="btn-close-modal" onclick="hidePremiumModal()">&times;</button>
+            <div class="premium-icon">
+                <i class="fas fa-crown"></i>
+            </div>
+            <h2>Version Premium</h2>
+            <p>Exportez votre CV en format PDF professionnel haute définition.</p>
+            
+            <div class="premium-price">
+                500 <span>FBU / export</span>
+            </div>
+
+            <div class="lumicash-box">
+                <h4><i class="fas fa-mobile-alt"></i> Paiement Lumicash</h4>
+                <p>Envoyez <strong>500 FBU</strong> au numéro suivant :</p>
+                <div style="font-size: 1.25rem; font-weight: 700; margin: 0.5rem 0; color: var(--primary-color);">
+                    68 589 729
+                </div>
+                <div class="transaction-input">
+                    <label class="form-label">Numéro de transaction :</label>
+                    <input type="text" id="transaction-id" class="form-control" placeholder="Entrez le code reçu par SMS">
+                </div>
+            </div>
+
+            <button onclick="verifyPayment()" class="btn-primary" style="width: 100%; justify-content: center;">
+                <i class="fas fa-check-circle"></i> Valider et Télécharger
+            </button>
+            
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem;">
+                Le téléchargement commencera automatiquement après validation.
+            </p>
+        </div>
+    </div>
 </body>
 
 </html>
